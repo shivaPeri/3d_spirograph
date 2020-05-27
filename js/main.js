@@ -1,45 +1,91 @@
 ///////////////////////////////////////////////// SETUP
 
 var scene = new THREE.Scene();
-//var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-var viewSize = 10;
+var viewSize = 50;
 var aspectRatio = window.innerWidth / window.innerHeight;
+//var camera = new THREE.PerspectiveCamera( 75, aspectRatio, 0.1, 1000 );
 var camera = new THREE.OrthographicCamera( -aspectRatio * viewSize / 2, aspectRatio * viewSize /2, viewSize / 2, -viewSize /2, -1000, 1000)
 scene.add( camera );
 
+camera.position.x = 10;
+camera.position.y = 5;
+camera.position.z = 15;
+camera.lookAt(scene.position);
+
 var light = new THREE.AmbientLight(0xffffff, 0.75);
 scene.add(light);
+
+var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+directionalLight.position = (1, 1, 1);
+scene.add( directionalLight );
 
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 renderer.setClearColor( 0xffffff, 1 );
 
-controls = new THREE.OrbitControls(camera, renderer.domElement);
-var axesHelper = new THREE.AxesHelper( 5 );
+var controls = new THREE.OrbitControls(camera, renderer.domElement);
+var axesHelper = new THREE.AxesHelper( 250 );
 scene.add( axesHelper );
 
 ///////////////////////////////////////////////// MATERIALS 
 
-var clear = new THREE.MeshBasicMaterial({ 
+var clear = new THREE.MeshLambertMaterial({ 
   color: 0x000000,
   transparent: true,
   opacity: 0.25,
+  depthWrite: false,
 });
-clear.depthWrite = false;
-//renderer.sortObjects = false;
+
+var clear2 = new THREE.MeshLambertMaterial({ 
+  color: 0x000000,
+  transparent: true,
+  opacity: 0.75,
+  depthWrite: false,
+});
+
 
 var line_mat = new THREE.LineBasicMaterial( {
 	color: 0xff0000,
 	linewidth: 1,
 } );
 
+var normal = new THREE.MeshNormalMaterial( {} );
+
+var color = new THREE.MeshLambertMaterial( {
+   color: 0xff8000, 
+   wireframe: false 
+} );
+
+///////////////////////////////////////////////// TEST STUFF
+
+
+// var randomPoints = [];
+// for ( var i = 0; i < 10; i ++ ) {
+//   randomPoints.push( new THREE.Vector3( ( i - 4.5 ) * 50, THREE.MathUtils.randFloat( - 50, 50 ), THREE.MathUtils.randFloat( - 50, 50 ) ) );
+// }
+// var randomSpline = new THREE.CatmullRomCurve3( randomPoints );
+// randomSpline.tension = 0;
+
+// //
+var extrudeSettings = {
+  steps: 200,
+  bevelEnabled: false,
+};
+
+// var mesh = createPath( 10, randomSpline );
+// console.log(mesh);
+// scene.add( mesh );
+
+
 ///////////////////////////////////////////////// ASSEMBLY & PATH FUNCTIONS
 
 var spheres = []; // mesh array
 var ass = new Assembly(); // main data-structure
 
-var MAX_POINTS = 10000;
+var geometry = new THREE.SphereGeometry(1, 32, 32);
+
+var MAX_POINTS = 20000;
 var drawCount = 2;
 var index = -1;
 var line_geometry = new THREE.BufferGeometry();
@@ -54,7 +100,7 @@ function createAssembly() {  // creates meshes for each sphere
   for (var i = 0; i < ass.size; i++) {
     if (spheres[i] === undefined) {
       var ball = ass.balls[i];
-      var geometry = new THREE.SphereGeometry(ball.r, 32, 32);
+      var geometry = new THREE.SphereBufferGeometry(ball.r, 32, 32);
       var tmp = new THREE.Mesh (geometry, clear);
       spheres[i] = tmp;
       scene.add( spheres[i] );
@@ -62,19 +108,20 @@ function createAssembly() {  // creates meshes for each sphere
   }
 }
 createAssembly();
+updateSelection(0);
 
 function updateAssembly( play ) { // updates position of each sphere and path points
   for (var k = 0; k < ass.speed; k++) {
     if (play) ass.update();
     for (var i = 0; i < ass.size; i++) {
       var tmp = new THREE.Vector3(0,0,0);
-      var tmp2 = ass.balls[i].pos;
       for (var j = 0; j < i; j++) {
         tmp.addVectors(tmp, ass.balls[j].pos);
       }
       spheres[i].position.set(tmp.x, tmp.y, tmp.z);
       if (play) {
-        tmp.addVectors(tmp, tmp2);
+      // if (play && i == ass.size-1) {
+        tmp.addVectors(tmp, ass.balls[i].pos);
         path.geometry.attributes.position.array[index++] = tmp.x;
         path.geometry.attributes.position.array[index++] = tmp.y;
         path.geometry.attributes.position.array[index++] = tmp.z;
@@ -85,14 +132,40 @@ function updateAssembly( play ) { // updates position of each sphere and path po
   }
 }
 
+function updateSelection( x ) { // updates the selected sphere to be darker
+  for (var i = 0; i < ass.size; i++) {
+    if (i == x) spheres[i].material = clear2;
+    else spheres[i].material = clear;
+  }
+}
+
+function changeShapeSize( s ) { // creates a square with side length s
+  var pts = [];
+  pts.push( new THREE.Vector2( -s/2, -s/2 ) );
+  pts.push( new THREE.Vector2( -s/2, s/2 ) );
+  pts.push( new THREE.Vector2( s/2, s/2 ) );
+  pts.push( new THREE.Vector2( s/2, -s/2 ) );
+  pts.push( new THREE.Vector2( -s/2, -s/2 ) );
+  return new THREE.Shape( pts );
+}
+
+function createPathMesh( size, path ) {
+  extrudeSettings.steps = path.length * 5;
+  extrudeSettings.extrudePath = new THREE.CatmullRomCurve3( path );
+  var shape = changeShapeSize( size );
+  var geometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
+  var mesh = new THREE.Mesh( geometry, color );
+  return mesh;
+}
+
 ///////////////////////////////////////////////// GUI CONTROLS
 
 var guiControls = new function() {
+  this.ass = new Assembly();
   this.speed = 1;
-  this.weight = 1;
   this.showAssembly = true;
+  this.axes = true;
   this.play = false;
-  this.normal = false;
   this.stroke = 0xFF0000;
   this.background = 0xE3FFFC;
   this.assembly = 0x919191;
@@ -105,6 +178,9 @@ var guiControls = new function() {
     createAssembly();
     updateAssembly();
     this.selection = ass.size - 1;
+    updateSelection( this.selection );
+    console.log(ass.size);
+    select.max(ass.size - 1);
   }
   this.remove = function() {
     if (ass.size != 1) {
@@ -112,34 +188,34 @@ var guiControls = new function() {
       spheres.pop().visible = false;
       if (this.selection == ass.size) this.selection--;
     }
+    select.max(ass.size - 1);
+    updateSelection();
   }
   this.clear = function() {
     path.geometry.attributes.position.array = new Float32Array( MAX_POINTS * 3 );
     drawCount = 2;
+    index = -1;
     path.geometry.setDrawRange(0, drawCount);
   }
 }
 
 var gui = new dat.GUI();
-var changeSpeed = gui.add(guiControls, 'speed', 1, 100).step(1);
-var changeWeight = gui.add(guiControls, 'weight', 1, 40).step(1);
+var changeSpeed = gui.add(guiControls, 'speed', 1, 10).step(1);
 var toggleAssembly = gui.add(guiControls, 'showAssembly');
+var toggleAxes = gui.add(guiControls, 'axes');
 gui.add(guiControls, 'play');
-gui.add(guiControls, 'normal');
 gui.addColor(guiControls, 'stroke');
 gui.addColor(guiControls, 'background');
 gui.addColor(guiControls, 'assembly');
-var select = gui.add(guiControls, 'selection').min(0).step(1).max(15);
-var changeR = gui.add(guiControls, 'radius', 1, 10);
-var changeA = gui.add(guiControls, 'd_alpha', -5, 5).step(0.1);
-var changeB = gui.add(guiControls, 'd_beta', -5, 5).step(0.1);
+var select = gui.add(guiControls, 'selection').min(0).step(1).max(0);
+var changeR = gui.add(guiControls, 'radius', 1, 50);
+var changeA = gui.add(guiControls, 'd_alpha', -1, 1).step(0.1);
+var changeB = gui.add(guiControls, 'd_beta', -1, 1).step(0.1);
 gui.add(guiControls, 'add');
 gui.add(guiControls, 'remove');
 gui.add(guiControls, 'clear');
 
 changeSpeed.onChange(function(value) {ass.speed = value;});
-
-changeWeight.onChange(function(value) {path.material.linewidth = value;})
 
 toggleAssembly.onChange(function(value) { 
   for (var i = 0; i < ass.size; i++) {
@@ -148,46 +224,54 @@ toggleAssembly.onChange(function(value) {
   }
 }); 
 
+toggleAxes.onChange(function(value) {
+  if (value) axesHelper.visible = true;
+  else axesHelper.visible = false;
+});
+
 changeR.onChange(function(value) {
-  var i = guiControls.selection % ass.size;
+  var i = guiControls.selection;
   ass.balls[i].r = value;
+  ass.balls[i].update();
   var init_radius = spheres[i].geometry.parameters.radius;
   spheres[i].scale.x = value / init_radius;
   spheres[i].scale.y = value / init_radius;
   spheres[i].scale.z = value / init_radius;
+  updateAssembly();
 });
 
 changeA.onChange(function(value) {
-  ass.balls[guiControls.selection % ass.size].d_alpha = value;
+  ass.balls[guiControls.selection].d_alpha = value;
 });
 
 changeB.onChange(function(value) {
-  ass.balls[guiControls.selection % ass.size].d_beta = value;
+  ass.balls[guiControls.selection].d_beta = value;
 });
 
 select.onChange(function(value) {
-  guiControls.radius = ass.balls[value % ass.size].r;
-  guiControls.d_alpha = ass.balls[value % ass.size].d_alpha;
-  guiControls.d_beta = ass.balls[value % ass.size].d_beta;
+  guiControls.radius = ass.balls[value].r;
+  guiControls.d_alpha = ass.balls[value].d_alpha;
+  guiControls.d_beta = ass.balls[value].d_beta;
   for (var i in gui.__controllers) {
     gui.__controllers[i].updateDisplay();
   }
+  updateSelection(value);
 });
 
-///////////////////////////////////////////////// 
 
-camera.position.z = 10;
+///////////////////////////////////////////////// 
 
 function animate() {
   requestAnimationFrame( animate );
   
   renderer.setClearColor( guiControls.background, 1 );
   clear.color.setHex( guiControls.assembly );
+  clear2.color.setHex( guiControls.assembly );
   line_mat.color.setHex( guiControls.stroke );
+  color.color.setHex( guiControls.stroke );
 
   updateAssembly( guiControls.play );
-
-  if (drawCount != -1) path.geometry.attributes.position.needsUpdate = true; 
+  if (index != -1) path.geometry.attributes.position.needsUpdate = true; 
 
   renderer.render( scene, camera );
 }
