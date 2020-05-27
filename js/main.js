@@ -50,33 +50,10 @@ var line_mat = new THREE.LineBasicMaterial( {
 	linewidth: 1,
 } );
 
-var normal = new THREE.MeshNormalMaterial( {} );
-
 var color = new THREE.MeshLambertMaterial( {
    color: 0xff8000, 
    wireframe: false 
 } );
-
-///////////////////////////////////////////////// TEST STUFF
-
-
-// var randomPoints = [];
-// for ( var i = 0; i < 10; i ++ ) {
-//   randomPoints.push( new THREE.Vector3( ( i - 4.5 ) * 50, THREE.MathUtils.randFloat( - 50, 50 ), THREE.MathUtils.randFloat( - 50, 50 ) ) );
-// }
-// var randomSpline = new THREE.CatmullRomCurve3( randomPoints );
-// randomSpline.tension = 0;
-
-// //
-var extrudeSettings = {
-  steps: 200,
-  bevelEnabled: false,
-};
-
-// var mesh = createPath( 10, randomSpline );
-// console.log(mesh);
-// scene.add( mesh );
-
 
 ///////////////////////////////////////////////// ASSEMBLY & PATH FUNCTIONS
 
