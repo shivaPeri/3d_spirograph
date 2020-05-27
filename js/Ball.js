@@ -11,6 +11,9 @@ class Ball {
     rotate() {
         this.alpha += this.d_alpha;
         this.beta += this.d_beta;
+        this.update();
+    }
+    update() {
         this.pos.x = this.r * Math.sin(this.beta) * Math.cos(this.alpha);
         this.pos.y = this.r * Math.sin(this.beta) * Math.sin(this.alpha);
         this.pos.z = this.r * Math.cos(this.beta);
@@ -19,7 +22,7 @@ class Ball {
 
 class Assembly {
     constructor() {
-        this.main = new Ball(4, 0.1, 0.1);
+        this.main = new Ball(10, 0.1, 0.1);
         this.balls = [this.main];
         this.selected = 0; // index
         this.speed = 1;
@@ -30,6 +33,6 @@ class Assembly {
             this.balls[i].rotate();
         }
     }
-    add() {this.balls.push(new Ball (1, 0.1, 0.1)); this.size++;}
+    add() {this.balls.push(new Ball (3, 0.1, 0.1)); this.size++;}
     rem() {if (this.size != 1) {this.balls.pop(); this.size--;}}
 }
