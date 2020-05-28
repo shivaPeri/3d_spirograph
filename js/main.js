@@ -63,7 +63,7 @@ var ass = new Assembly(); // main data-structure
 var geometry = new THREE.SphereGeometry(1, 32, 32);
 
 var MAX_POINTS = 20000;
-var drawCount = 2;
+var drawCount = -1;
 var index = -1;
 var line_geometry = new THREE.BufferGeometry();
 var positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
@@ -170,7 +170,7 @@ var guiControls = new function() {
   }
   this.clear = function() {
     path.geometry.attributes.position.array = new Float32Array( MAX_POINTS * 3 );
-    drawCount = 2;
+    drawCount = -1;
     index = -1;
     path.geometry.setDrawRange(0, drawCount);
   }
