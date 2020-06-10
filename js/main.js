@@ -20,6 +20,7 @@ directionalLight.position = (1, 1, 1);
 scene.add( directionalLight );
 
 var renderer = new THREE.WebGLRenderer();
+// var renderer = new THREE.SVGRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 renderer.setClearColor( 0xffffff, 1 );
@@ -63,7 +64,7 @@ var ass = new Assembly(); // main data-structure
 var geometry = new THREE.SphereGeometry(1, 32, 32);
 
 var MAX_POINTS = 20000;
-var drawCount = -1;
+var drawCount = 2;
 var index = -1;
 var line_geometry = new THREE.BufferGeometry();
 var positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
@@ -156,8 +157,8 @@ var guiControls = new function() {
     updateAssembly();
     this.selection = ass.size - 1;
     updateSelection( this.selection );
-    console.log(ass.size);
     select.max(ass.size - 1);
+    updateControllers();
   }
   this.remove = function() {
     if (ass.size != 1) {
@@ -166,11 +167,12 @@ var guiControls = new function() {
       if (this.selection == ass.size) this.selection--;
     }
     select.max(ass.size - 1);
-    updateSelection();
+    updateSelection( this.selection );
+    updateControllers();
   }
   this.clear = function() {
     path.geometry.attributes.position.array = new Float32Array( MAX_POINTS * 3 );
-    drawCount = -1;
+    drawCount = 2;
     index = -1;
     path.geometry.setDrawRange(0, drawCount);
   }
@@ -226,15 +228,18 @@ changeB.onChange(function(value) {
 });
 
 select.onChange(function(value) {
-  guiControls.radius = ass.balls[value].r;
-  guiControls.d_alpha = ass.balls[value].d_alpha;
-  guiControls.d_beta = ass.balls[value].d_beta;
-  for (var i in gui.__controllers) {
-    gui.__controllers[i].updateDisplay();
-  }
+  updateControllers();
   updateSelection(value);
 });
 
+function updateControllers() {
+  guiControls.radius = ass.balls[guiControls.selection].r;
+  guiControls.d_alpha = ass.balls[guiControls.selection].d_alpha;
+  guiControls.d_beta = ass.balls[guiControls.selection].d_beta;
+  for (var i in gui.__controllers) {
+    gui.__controllers[i].updateDisplay();
+  }
+}
 
 ///////////////////////////////////////////////// 
 
