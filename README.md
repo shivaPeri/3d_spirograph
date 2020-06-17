@@ -1,7 +1,7 @@
 # 3d_spirograph
 3D Spirograph program; Lets user create a 3D spirograph pattern
 
-![Demo 1](/examples/3d_Spirograph_demo.gif)
+![Demo 1](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/3d_spirograph_demo.gif)
 Format: ![Alt Text](url)
 
 An assembly is edited by editing the controls on the selected sphere.
