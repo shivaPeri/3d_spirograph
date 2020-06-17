@@ -19,14 +19,18 @@ An assembly is edited by editing the controls on the selected sphere.
 Each sphere has a d_alpha and d_beta, which controls the respective speeds of two axes of rotation.
 ![Spherical Coordinates](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/spherical_coordinates.png)
 
-# .SVG and .STL Export
+# File Export
 The program allows users to export in several filetypes
+
+![file export](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/Screen%20Shot%202020-06-17%20at%202.02.07%20PM.png)
+
+## .STL
+.stl is a popular format for 3d printing. It can also be used in 3d renders
 
 ![STL export](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/stl_demo-2.gif)
 
+# .SVG
+.svg (Scalable Vector Graphics) is a vector alternative to raster graphics
+
 ![SVG Export](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/svg_demo_2.gif)
 
-# Example Spirographs
-![example_1](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/Screen%20Shot%202020-05-26%20at%209.45.31%20PM.png)
-![example 2](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/Screen%20Shot%202020-05-26%20at%2010.19.24%20PM.png)
-![example 3](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/Screen%20Shot%202020-05-28%20at%202.09.45%20AM.png)
