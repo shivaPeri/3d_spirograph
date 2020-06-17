@@ -1,7 +1,7 @@
 # 3D Spirography
 Lets user create a 3D spirograph pattern using Three js and WebGL
 
-Launch here (https://shivaperi.github.io/3d_spirograph/)
+Launch program [here](https://shivaperi.github.io/3d_spirograph/)
 
 # Demo
 ![Demo 1](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/3d_spirograph_demo.gif)
