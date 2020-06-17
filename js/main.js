@@ -63,8 +63,8 @@ var ass = new Assembly(); // main data-structure
 
 var geometry = new THREE.SphereGeometry(1, 32, 32);
 
-var MAX_POINTS = 20000;
-var drawCount = 2;
+var MAX_POINTS = 30000;
+var drawCount = -1;
 var index = -1;
 var line_geometry = new THREE.BufferGeometry();
 var positions = new Float32Array( MAX_POINTS * 3 ); // 3 vertices per point
@@ -128,19 +128,111 @@ function changeShapeSize( s ) { // creates a square with side length s
 }
 
 function createPathMesh( size, path ) {
-  extrudeSettings.steps = path.length * 5;
+  extrudeSettings.steps = path.length * 10;
   extrudeSettings.extrudePath = new THREE.CatmullRomCurve3( path );
+  console.log(extrudeSettings.extrudePath.tension);
+  extrudeSettings.extrudePath.tension = 0;
+  console.log(extrudeSettings.extrudePath.tension);
   var shape = changeShapeSize( size );
   var geometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
   var mesh = new THREE.Mesh( geometry, color );
   return mesh;
 }
 
+///////////////////////////////////////////////// STL EXPORT
+
+var exporter = new THREE.STLExporter();
+
+var extrudeSettings = {
+  steps: 200,
+  bevelEnabled: false,
+};
+
+var link = document.createElement( 'a' );
+link.style.display = 'none';
+document.body.appendChild( link );
+
+function save( blob, filename ) {
+  link.href = URL.createObjectURL( blob );
+  link.download = filename;
+  link.click();
+}
+
+function saveArrayBuffer( buffer, filename ) {
+  save( new Blob( [ buffer ], { type: 'application/octet-stream' } ), filename );
+}
+
+///////////////////////////////////////////////// SVG EXPORT
+
+function applyRotation( points ) {
+  var az = controls.getAzimuthalAngle();
+  var pol = controls.getPolarAngle() + Math.PI/2;
+  var x_axis = new THREE.Vector3(1, 0, 0);
+  var y_axis = new THREE.Vector3(0, 1, 0);
+  
+  var vecArr = [];
+  for (var i = 0; i < points.length/3; i++) {
+    vecArr[i] = new THREE.Vector3(points[3*i], points[3*i+1], points[3*i+2]);
+    vecArr[i].applyAxisAngle(y_axis, -az);
+    vecArr[i].applyAxisAngle(x_axis, pol);
+  }
+  for (var i = 0; i < vecArr.length; i++) {
+    points[3*i] = vecArr[i].x;
+    points[3*i+1] = vecArr[i].y;
+    points[3*i+2] = vecArr[i].z;
+  }
+  return points;
+}
+
+function create2DPathString( weight, points ) {
+  var pathString = '';
+  var maxLen = 0;
+  for (var i = 0; i < ass.size; i++) {maxLen += ass.balls[i].r;}
+  maxLen *= 2;
+
+  var rotated_points = applyRotation( points );
+  for (var i = 0; i < rotated_points.length; i++) { // only takes x & y values
+    var tmp = rotated_points[i].toFixed(5);
+    if (i % 3 == 0 || i % 3 == 1) pathString = pathString + ' ' + tmp.toString();
+  }
+  var file = '<svg version="1.0" width="500" height="500" viewBox="';
+  file = file + -maxLen/2 + ' ' + -maxLen/2 + ' ' + maxLen + ' ' + maxLen;
+  file = file + '" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <polyline points="';
+  var color = line_mat.color.getHexString();
+  file = file + pathString + '" fill="none" stroke="#' + color + '" stroke-width="' + weight + '"></polyline></svg>';
+  return file;
+}
+
+function saveSVG ( weight, points, filename) {
+  save( new Blob( [create2DPathString( weight, points )], { type: 'application/octet-stream' } ), filename );
+}
+
+///////////////////////////////////////////////// PATH EXPORT
+
+String.prototype.format = function () {
+  var str = this;
+  for ( var i = 0; i < arguments.length; i ++ ) {
+    str = str.replace( '{' + i + '}', arguments[ i ] );
+  }
+  return str;
+};
+
+function exportPathCode( p ) {
+  var strplace = [];
+  for ( var i = 0; i < p.length / 3; i ++ ) {
+    strplace.push( 'new THREE.Vector3({0}, {1}, {2})'.format( p[3*i], p[3*i+1], p[3*i+2] ) );
+  }
+  // console.log( strplace.join( ',\n' ) );
+  var code = '[' + ( strplace.join( ',\n\t' ) ) + ']';
+  return code;
+}
+
 ///////////////////////////////////////////////// GUI CONTROLS
 
 var guiControls = new function() {
-  this.ass = new Assembly();
+  // this.ass = new Assembly();
   this.speed = 1;
+  this.weight = 0.1;
   this.showAssembly = true;
   this.axes = true;
   this.play = false;
@@ -172,9 +264,28 @@ var guiControls = new function() {
   }
   this.clear = function() {
     path.geometry.attributes.position.array = new Float32Array( MAX_POINTS * 3 );
-    drawCount = 2;
+    drawCount = -1;
     index = -1;
     path.geometry.setDrawRange(0, drawCount);
+  }
+  this.filename = 'my_spirograph';
+  this.exportSTL = function() {
+    var arr = path.geometry.attributes.position.array;
+    var tmp = [];
+    for (var i = 0; i < drawCount; i++) {
+      tmp[i] = new THREE.Vector3(arr[3 * i], arr[3 * i + 1], arr[3 * i + 2]);
+    }
+    var mesh = createPathMesh( 0.1, tmp );
+    var result = exporter.parse( mesh, { binary: true } );
+    saveArrayBuffer( result, this.filename + '.stl' );
+  }
+  this.exportSVG = function () {
+    var arr = path.geometry.attributes.position.array.slice(0,index);
+    saveSVG ( 0.1, arr, this.filename + '.svg');
+  }
+  this.exportCode = function() {
+    var code = exportPathCode(path.geometry.attributes.position.array.slice(0,index-1));
+    save( new Blob( [code], { type: 'application/octet-stream' } ), this.filename + '.txt' );
   }
 }
 
@@ -193,6 +304,12 @@ var changeB = gui.add(guiControls, 'd_beta', -1, 1).step(0.1);
 gui.add(guiControls, 'add');
 gui.add(guiControls, 'remove');
 gui.add(guiControls, 'clear');
+gui.add(guiControls, 'filename');
+// var changeWeight = gui.add(guiControls, 'weight', 0, 5);
+gui.add(guiControls, 'exportSTL');
+gui.add(guiControls, 'exportSVG');
+gui.add(guiControls, 'exportCode');
+// gui.remember(guiControls);
 
 changeSpeed.onChange(function(value) {ass.speed = value;});
 
