@@ -29,7 +29,7 @@ The program allows users to export in several filetypes
 
 ![STL export](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/stl_demo-2.gif)
 
-# .SVG
+## .SVG
 .svg (Scalable Vector Graphics) is a vector alternative to raster graphics
 
 ![SVG Export](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/svg_demo_2.gif)
