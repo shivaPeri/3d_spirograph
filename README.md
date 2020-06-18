@@ -6,7 +6,7 @@ Launch program [here](https://shivaperi.github.io/3d_spirograph/)
 # Demo
 ![Demo 1](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/3d_spirograph_demo.gif)
 
-# Usage Instructions
+# Usage
 An assembly is edited by editing the controls on the selected sphere.
 * Toggle *play* to run the machine.
 * Use *add* and *remove* to create/destroy additional spheres
@@ -33,4 +33,7 @@ The program allows users to export in several filetypes
 .svg (Scalable Vector Graphics) is a vector alternative to raster graphics
 
 ![SVG Export](https://github.com/shivaPeri/3d_spirograph/blob/master/examples/svg_demo_2.gif)
+
+## THREE.js Code
+The final export function is *exportCode*, which exports a .txt file with a list of THREE.Vector3 points corresponding to the current spirograph path
 
